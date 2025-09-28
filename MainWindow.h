@@ -1,29 +1,25 @@
-#pragma once
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTextEdit>
 #include <QLineEdit>
-#include <QDockWidget>
+#include <QPlainTextEdit>
+#include "ECLWrapper.h"
 
-extern "C" {
-#include <ecl/ecl.h>
-}
-
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
-    void onCommandEntered();
+    void executeCommand();
 
 private:
-    QDockWidget *commandDock;
-    QTextEdit *historyEdit;
-    QLineEdit *inputEdit;
+    QPlainTextEdit *consoleOutput;
+    QLineEdit *commandInput;
 
-    // Evaluate a Lisp string and return textual result (or error string)
-    QString evaluateLisp(const QString &lispCode);
+    void initECL();
 };
+
+#endif // MAINWINDOW_H
