@@ -1,10 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <ecl/ecl.h>
+
 #include <QMainWindow>
 #include <QLineEdit>
 #include <QPlainTextEdit>
-#include "ECLWrapper.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT

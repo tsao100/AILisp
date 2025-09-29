@@ -1,23 +1,18 @@
-#-------------------------------------------------
-# Qt + ECL Command Window (AutoCAD-like REPL)
-#-------------------------------------------------
-
 QT += widgets
 CONFIG += c++17
 
-# Source files
 SOURCES += main.cpp \
            MainWindow.cpp
 
-# Header files
-HEADERS += MainWindow.h \
-           ECLWrapper.h
+HEADERS += MainWindow.h
 
-# Include paths for ECL
+# If ECL headers are in a nonstandard dir:
 INCLUDEPATH += /usr/include/ecl
 
-# Link libraries: ECL + GMP/MPFR (adjust if installed elsewhere)
-LIBS += -lecl -lgmp -lmpfr
+# Linker libs - adjust if necessary
+LIBS += -lecl
+# and possibly
+LIBS += -lgmp -lmpfr
 
-# Fix GMP C++ operator conflict
-DEFINES += __GMP_NO_CXX
+# If ECL is installed in a custom lib dir:
+# LIBS += -L/path/to/ecl/lib -lecl
