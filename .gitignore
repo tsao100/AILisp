@@ -44,3 +44,5 @@ compile_commands.json
 *.tmp
 *.log
 *.cache
+build/unknown-Debug/MainWindow.o
+build/unknown-Debug/QtEclCommandWindow
