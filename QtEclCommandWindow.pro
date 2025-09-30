@@ -6,13 +6,36 @@ SOURCES += main.cpp \
 
 HEADERS += MainWindow.h
 
-# If ECL headers are in a nonstandard dir:
-INCLUDEPATH += /usr/include/ecl
+# -------------------------------
+# Platform specific settings
+# -------------------------------
 
-# Linker libs - adjust if necessary
-LIBS += -lecl
-# and possibly
-LIBS += -lgmp -lmpfr
+# --- Linux / Ubuntu ---
+unix {
+    # If ECL headers are in a nonstandard dir:
+    INCLUDEPATH += /usr/include/ecl
 
-# If ECL is installed in a custom lib dir:
-# LIBS += -L/path/to/ecl/lib -lecl
+    # Linker libs
+    LIBS += -lecl -lgmp -lmpfr
+
+    # If ECL is in a custom lib dir:
+    # LIBS += -L/path/to/ecl/lib -lecl
+}
+
+# --- Windows (MSVC / MinGW) ---
+win32 {
+    # Adjust this path depending on your ECL install
+    INCLUDEPATH += D:/Git/ecl/v24.5.10/vc143-x64
+
+    # Library search path
+    LIBS += -LD:/Git/ecl/v24.5.10/vc143-x64
+
+    # Windows libraries usually have `.lib` extensions for MSVC
+    # For MinGW, you can often still use -lecl
+    msvc: {
+        LIBS += ecl.lib gmp.lib mpfr.lib
+    }
+    mingw: {
+        LIBS += -lecl -lgmp -lmpfr
+    }
+}
