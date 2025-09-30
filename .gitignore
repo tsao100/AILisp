@@ -1,2 +1,46 @@
-QtEclCommandWindow.pro.user
-build/*
+# Qt Creator user-specific files
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+
+# Build directories
+build*/
+*/build*/
+
+# Qt qmake generated files
+*.qmake.stash
+Makefile
+Makefile.*
+
+# Qt MOC, UIC, RCC generated files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Qt Creator / clangd
+.qtc_clangd/
+compile_commands.json
+
+# Visual Studio intermediate
+*.obj
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.lib
+
+# Visual Studio generated binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Others
+*.o
+*.a
+*.lo
+*.la
+*.tmp
+*.log
+*.cache
