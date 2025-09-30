@@ -33,7 +33,7 @@ win32 {
     # Windows libraries usually have `.lib` extensions for MSVC
     # For MinGW, you can often still use -lecl
     msvc: {
-        LIBS += ecl.lib gmp.lib mpfr.lib
+        LIBS += ecl.lib
     }
     mingw: {
         LIBS += -lecl -lgmp -lmpfr

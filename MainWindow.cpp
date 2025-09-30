@@ -4,6 +4,13 @@
 #include <QKeyEvent>
 #include <QPushButton>
 
+// Qt5/Qt6 compatibility for regular expressions
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
+
 QString eclObjectToQString(cl_object obj) {
     if (obj == Cnil) return "NIL";
 
@@ -27,6 +34,27 @@ QString eclObjectToQString(cl_object obj) {
     }
 
     return "<unconvertible>";
+}
+
+// Helper function to evaluate ECL code - separate to avoid MSVC SEH issues
+// This function has no C++ objects with destructors
+static bool evaluateECLForm(const char* code, cl_object* result) {
+    cl_object form = c_string_to_object(code);
+
+    if (form == Cnil || form == NULL) {
+        return false;
+    }
+
+    bool success = true;
+    *result = Cnil;
+
+    CL_CATCH_ALL_BEGIN(ecl_process_env()) {
+        *result = cl_eval(form);
+    } CL_CATCH_ALL_IF_CAUGHT {
+        success = false;
+    } CL_CATCH_ALL_END;
+
+    return success;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -191,8 +219,8 @@ void MainWindow::defineCADCommands() {
              "LINE command: Specify first point")))
     )";
 
-    cl_object form = c_string_to_object(lineCommand);
-    cl_eval(form);
+    cl_object result;
+    evaluateECLForm(lineCommand, &result);
 
     // Define more CAD commands as needed
     const char* circleCommand = R"(
@@ -206,8 +234,7 @@ void MainWindow::defineCADCommands() {
              "CIRCLE command: Specify center point")))
     )";
 
-    form = c_string_to_object(circleCommand);
-    cl_eval(form);
+    evaluateECLForm(circleCommand, &result);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
@@ -289,7 +316,15 @@ void MainWindow::executeCommand() {
     QString wrapped;
     if (!cmd.startsWith('(')) {
         // CAD command style - convert to function call
-        QStringList parts = cmd.split(QRegExp("\\s+"));
+
+        // Qt5/Qt6 compatible string splitting
+        QStringList parts;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        parts = cmd.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+#else
+        parts = cmd.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+#endif
+
         QString funcName = parts[0].toLower();
         QStringList args = parts.mid(1);
 
@@ -312,42 +347,26 @@ void MainWindow::executeCommand() {
     QString out;
     bool hasError = false;
 
-    try {
-        cl_object form = c_string_to_object(safewrapped.toUtf8().constData());
+    // Convert QString to QByteArray and get C string
+    QByteArray codeBytes = safewrapped.toUtf8();
+    const char* codeStr = codeBytes.constData();
 
-        if (form == Cnil || form == NULL) {
-            out = "ERROR: Failed to parse command";
+    // Call the helper function that uses ECL's SEH
+    cl_object res = Cnil;
+    bool evalSuccess = evaluateECLForm(codeStr, &res);
+
+    if (!evalSuccess) {
+        out = "ERROR: Exception during evaluation";
+        hasError = true;
+    } else if (res == NULL) {
+        out = "ERROR: Evaluation returned NULL";
+        hasError = true;
+    } else {
+        out = eclObjectToQString(res);
+        // Check if the result indicates an error from handler-case
+        if (out.startsWith("ERROR:", Qt::CaseInsensitive)) {
             hasError = true;
-        } else {
-            cl_object res = Cnil;
-
-            // Use ECL's error handling
-            CL_CATCH_ALL_BEGIN(ecl_process_env()) {
-                res = cl_eval(form);
-            } CL_CATCH_ALL_IF_CAUGHT {
-                out = "ERROR: Exception during evaluation";
-                hasError = true;
-            } CL_CATCH_ALL_END;
-
-            if (!hasError) {
-                if (res == NULL) {
-                    out = "ERROR: Evaluation returned NULL";
-                    hasError = true;
-                } else {
-                    out = eclObjectToQString(res);
-                    // Check if the result indicates an error from handler-case
-                    if (out.startsWith("ERROR:", Qt::CaseInsensitive)) {
-                        hasError = true;
-                    }
-                }
-            }
         }
-    } catch (const std::exception &e) {
-        out = QString("ERROR: C++ exception - %1").arg(e.what());
-        hasError = true;
-    } catch (...) {
-        out = "ERROR: Unknown exception during evaluation";
-        hasError = true;
     }
 
     // Always log to console output
